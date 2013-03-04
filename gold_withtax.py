@@ -49,16 +49,21 @@ class TaxMan:
 		self.income = 0.0
 		self.agent_count = agent_count * 1.0 #make it a real number
 
+	def reset_zero(self):
+		if (self.income < 0.00001):
+			self.income = 0
+
 	def tax_agents(self):
 		for agent in self.agents:
 			remainder = agent.deduct(agent.wallet * self.tax_rate)
-			self.income += agent.wallet * self.tax_rate - remainder
+			self.income += agent.wallet * self.tax_rate
 
 	def refund_agents(self):
 		fair = self.income / self.agent_count
 		for agent in self.agents:
 			agent.credit(fair)
 			self.income -= fair
+		self.reset_zero()
 
 class Agent:
 
@@ -217,7 +222,7 @@ def hist(bfw, figname):
 	pyplot.clf()
 		
 def main():
-		wallets = run(2000, 200, 0.0)
+		wallets = run(2000, 200, 0.0001)
 		hist(wallets, 'test')
 
 if __name__ == '__main__':
