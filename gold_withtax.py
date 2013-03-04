@@ -133,11 +133,17 @@ def run(iterations=100, number_of_agents=10, taxrate=0.10):
 	
 	""" Create a list of agents. Each agents attempts to collect as much gold as 
 		possible for a certain number of iterations. """
-	
+
+	#create our agents
 	agents = [Agent() for i in range(number_of_agents)]
+
+	#create a new default grid
 	grid = Grid()
-	
-	count = 1
+
+	#start our count at 0 to actually get our number of iterations
+	#for example if you typed 1 iteration, it would actually result in
+	# 0 iterations if we start a count at 1 (1 < 1 = false)
+	count = 0
 	while count < iterations:
 		count += 1
 		for agent in agents:
@@ -172,3 +178,9 @@ def hist(bfw, figname):
 	pyplot.savefig(figname)
 	pyplot.clf()
 		
+def main():
+        wallets = run(2000, 200, 0.0)
+        hist(wallets, 'test')
+
+if __name__ == '__main__':
+        main()
