@@ -7,13 +7,13 @@ from math import *
 import matplotlib.pyplot as pyplot
 from numpy import *
 
-##	The purpose of this project is to look at various tax models under a 
-##		simple agent-based economic model
-##	There is a grid with certain percentage of squares covered by gold nuggets
-##	Each agent, called a wiggling :), moves around on the grid and tries to get as much 
-##		gold as possible. They can only see the squares directly around them.	
-##	After each iteration, a tax is applied.
-##	That tax is then redistributed throughout all wigglings
+##  The purpose of this project is to look at various tax models under a 
+##      simple agent-based economic model
+##  There is a grid with certain percentage of squares covered by gold nuggets
+##  Each agent, called a wiggling :), moves around on the grid and tries to get as much 
+##      gold as possible. They can only see the squares directly around them.   
+##  After each iteration, a tax is applied.
+##  That tax is then redistributed throughout all wigglings
 
 grid_height = 100
 grid_width = 100
@@ -40,7 +40,26 @@ class Grid:
 			count += 1
 			d[randint(0, self.grid_width - 1), randint(0, self.grid_height - 1)] = 1
 		return(d)
-		
+
+class TaxMan:
+
+	def __init__(self, tax_rate, agents, agent_count):
+		self.tax_rate = tax_rate
+		self.agents = agents
+		self.income = 0.0
+		self.agent_count = agent_count * 1.0 #make it a real number
+
+	def tax_agents(self):
+		for agent in self.agents:
+			remainder = agent.deduct(agent.wallet * self.tax_rate)
+			self.income += agent.wallet * self.tax_rate - remainder
+
+	def refund_agents(self):
+		fair = self.income / self.agent_count
+		for agent in self.agents:
+			agent.credit(fair)
+			self.income -= fair
+
 class Agent:
 
 	""" Defines an agent that can move, search, and pick up gold """
@@ -63,6 +82,20 @@ class Agent:
 	def pick_up(self, grid):
 		grid.locations[self.location] = 0
 		self.wallet += 1
+		
+	def deduct(self, amount):
+		""" Deducts an amount from the agents wallet and returns the amount we couldn't deduct """
+		self.wallet -= amount
+		amount = 0
+		if (self.wallet < 0):
+			amount = 0 - self.wallet
+			self.wallet = 0
+		return amount
+
+	def credit(self, amount):
+		""" Credit an amount to the agent's wallet and return the amount added """
+		self.wallet += amount
+		return amount
 		
 	def move(self, grid, dir):
 	
@@ -104,11 +137,11 @@ class Agent:
 		return(r)
 		
 def reverse_lookup(d, v):
-    one_id = []
-    for k in d:
-        if d[k] == v:
-            one_id.append(k)
-    return(one_id)
+	one_id = []
+	for k in d:
+		if d[k] == v:
+			one_id.append(k)
+	return(one_id)
 		
 def plot_grid(agents, grid, figname):
 	x_agent, y_agent = [], []
@@ -140,6 +173,8 @@ def run(iterations=100, number_of_agents=10, taxrate=0.10):
 	#create a new default grid
 	grid = Grid()
 
+	taxmaster = TaxMan(taxrate, agents, number_of_agents)
+
 	#start our count at 0 to actually get our number of iterations
 	#for example if you typed 1 iteration, it would actually result in
 	# 0 iterations if we start a count at 1 (1 < 1 = false)
@@ -151,6 +186,8 @@ def run(iterations=100, number_of_agents=10, taxrate=0.10):
 				agent.pick_up(grid)
 			elif agent.search_home(grid) == False:
 				agent.move(grid, agent.search(grid)[agent.decide(grid)])
+		taxmaster.tax_agents()
+		taxmaster.refund_agents()
 		
 	vals = grid.locations.values()
 	stat = []
@@ -167,6 +204,7 @@ def run(iterations=100, number_of_agents=10, taxrate=0.10):
 	
 	print "Average wallet size is", mean, "gold."
 	print "Standard deviation is", sd, "gold."
+	print "Taxes in the bank", taxmaster.income, "gold."
 	
 	bigfatwallets = []
 	for agent in agents:
@@ -179,8 +217,8 @@ def hist(bfw, figname):
 	pyplot.clf()
 		
 def main():
-        wallets = run(2000, 200, 0.0)
-        hist(wallets, 'test')
+		wallets = run(2000, 200, 0.0)
+		hist(wallets, 'test')
 
 if __name__ == '__main__':
-        main()
+		main()
