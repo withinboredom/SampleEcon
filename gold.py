@@ -6,6 +6,7 @@ from random import *
 from math import *
 import matplotlib.pyplot as pyplot
 from numpy import *
+from graphics import *
 
 ##  The purpose of this project is to look at various tax models under a 
 ##      simple agent-based economic model
@@ -48,7 +49,19 @@ class Grid:
 				if self.locations[i,j] == 1:
 					how_much_gold += 1
 		return(how_much_gold)
-					
+	def get_x(self):
+		return self.grid_width
+	def get_y(self):
+		return self.grid_height
+	
+	def draw_gold(self, window):
+		for i in range(self.grid_height):
+			for j in range(self.grid_width):
+				if self.locations[i,j] == 1:
+					p = Point(i,j)
+					p.setFill("gold")
+					#p.setOutline("gold")
+					p.draw(window)
 
 class TaxMan:
 
@@ -98,6 +111,7 @@ class Agent:
 	def __init__(self):
 		self.location = self.draw_location()
 		self.wallet = 0
+		self.me = Point(self.location[0], self.location[1])
 		
 	def draw_location(self):
 		global grid_height
@@ -127,6 +141,13 @@ class Agent:
 		""" Credit an amount to the agent's wallet and return the amount added """
 		self.wallet += amount
 		return amount
+
+	def show_location(self, window):
+		if self.me.id is None:
+			self.me.draw(window)
+		else:
+			self.me.undraw()
+			self.me.draw(window)
 		
 	def move(self, grid, dir):
 	
@@ -144,6 +165,8 @@ class Agent:
 			self.location = (self.location[0] - 1,) + (self.location[1],)
 		else:
 			self.location = self.location
+		self.me.x = self.location[0]
+		self.me.y = self.location[1]
 			
 	def search(self, grid):
 		good_moves = []
@@ -193,7 +216,7 @@ def plot_grid(agents, grid, figname):
 	pyplot.savefig(figname)
 	pyplot.clf()
 
-def run(iterations=3000, number_of_agents=300, taxrate=0.10, policy='flat', upper_rate=0.20):
+def run(iterations=3000, number_of_agents=300, taxrate=0.10, policy='flat', upper_rate=0.20, show_live=False):
 	
 	""" Create a list of agents. Each agents attempts to collect as much gold as 
 		possible for a certain number of iterations. """
@@ -205,6 +228,10 @@ def run(iterations=3000, number_of_agents=300, taxrate=0.10, policy='flat', uppe
 	grid = Grid()
 	print "Grid defined with height", grid_height, "units and width", grid_width, "units."
 	print "Grid defined with", grid.how_much(), "total gold.\n\n"
+
+	if show_live:
+		window = set_up_window(grid)
+		grid.draw_gold(window)
 
 	taxmaster = TaxMan(taxrate, agents, number_of_agents, policy, 0.20)
 
@@ -219,6 +246,8 @@ def run(iterations=3000, number_of_agents=300, taxrate=0.10, policy='flat', uppe
 				agent.pick_up(grid)
 			elif agent.search_home(grid) == False:
 				agent.move(grid, agent.search(grid)[agent.decide(grid)])
+			if show_live:
+				agent.show_location(window)
 		if count % 300 == 0:
 			taxmaster.tax_agents()
 			print "Taxed at iteration", count
@@ -293,7 +322,7 @@ def hist(bfw, figname):
 	pyplot.savefig(figname)
 	pyplot.clf()
 				
-def single_run(grid=g):
+def single_run(grid):
 	for agent in a:
 		if agent.search_home(grid) == True:
 			agent.pick_up(grid)
@@ -306,10 +335,15 @@ def single_run(grid=g):
 	mx = max(w)
 	tq = m + ceil(0.5*(mx-m))
 	print m, mx, tq
+
+def set_up_window(grid):
+	win = GraphWin("Grid", grid.get_x(), grid.get_y())
+	return win
+	
 		
-def main(type='flat',main_rate=0.00,upper_rate=0.20):
-	wallet = run(3000,300,main_rate,type,upper_rate)
+def main(type='flat',main_rate=0.00,upper_rate=0.20, show_live=False):
+	wallet = run(3000,100,main_rate,type,upper_rate, show_live)
 	hist(wallet, 'test')
 
-#if __name__ == '__main__':
-#		main()
+if __name__ == '__main__':
+		main('upper', 0.33, 0.45, True)
